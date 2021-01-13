@@ -1,0 +1,4 @@
+# Introduction to r
+# Chapter 1 - Basics
+# Assigning variables
+my_var <- 4
