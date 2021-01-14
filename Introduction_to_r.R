@@ -40,3 +40,49 @@ mean(numeric_vector)
 # Comparison - select elements that are greater than 1
 selection_vector = c(numeric_vector) > 1  # Returns logical
 numeric_vector[selection_vector]  # Returns elements >1
+
+# Matrix - n-dimensional array
+my_matrix <- matrix(1:9, byrow=TRUE, nrow=3)
+# Numbers 1-9
+# byrow - matrix to be filled by rows
+# nrow - with 3 rows
+
+# To create matrix of vectors
+# Append vectors together using c()
+# Construct matrix
+
+# Naming cols and rows
+cnames <- c('A', 'B', 'C')
+rnames <- c('D', 'E', 'F')
+
+# Adding to matrix
+colnames(my_matrix) <- cnames
+rownames(my_matrix) <- rnames
+my_matrix
+
+# To calculate row sums
+totals <- rowSums(my_matrix)
+
+# To merge matrices/vectors by column
+my_matrix_sums <- cbind(my_matrix, totals)
+my_matrix_sums
+
+# rbind() can be used to add extra rows
+# colSums() can be used to sum rows
+
+# Subsetting
+my_matrix[1,2]  # First row, second col
+my_matrix[1:2, 2:3]  # Rows 1 and 2, cols 2 and 3
+my_matrix[,2]  # All rows, second col
+my_matrix[2,]  # Second row, all cols
+
+# Averaging a subset
+mean(my_matrix[,2])
+
+# Multiplying corresponding elements
+# Define a new matrix
+matrix_1 <- matrix(3:11, byrow=TRUE, nrow = 3)
+matrix_1
+my_matrix
+new_matrix <- my_matrix * matrix_1
+new_matrix
