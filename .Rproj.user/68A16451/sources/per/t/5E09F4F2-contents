@@ -1,0 +1,16 @@
+# Introduction to r
+# Chapter 1 - Basics
+# Assigning variables
+my_var <- 7
+my_var
+
+# Data types
+# Decimal values - numerics - e.g. 4.5
+# Whole numbers - integers - e.g. 4
+# Boolean values - logical - e.g. TRUE
+# Text - characters
+
+# Check datatype
+class(my_var)
+
+# Vectors - 1D 
