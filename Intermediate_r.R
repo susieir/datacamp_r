@@ -162,4 +162,73 @@ help(sd)
 ?sd
 
 # Args function
-args(sd)
+args(sd)  # Returns arguments
+
+# Functions work like a black box
+# Argument matching - by position or by name
+# Function arguments can have defaults
+
+# B: Writing functions
+# Solve a particular, well-defined problem
+
+# triple()
+# Defining function
+triple <- function(x) {
+  x * 3
+}
+ls()
+# Calling function
+triple(6)
+# Last expression executed in a function = return value
+# Can also be explicitly specified using return statement
+triple <- function(x) {
+  y <- x * 3
+  return(y)
+}
+
+triple(6)
+# To specify an optional argument, add a default value
+
+# Use return() and if()
+
+math_magic <- function(a, b = 1) {
+  if(b == 0){
+    return(0)
+  }
+  a*b + a/b
+}
+
+math_magic(4, 0)
+
+# Function scoping
+# Variables defined inside a function are not accessible outside the function
+
+# R passes arguments by value
+# R cannot change the variable that you input to that function
+# Variables only change if explicitly re-assigned
+
+# C - R Packages
+# Packages of code, data, documentation and tests
+# Easy to share
+# mean(), list(), sample() - part of base package
+# ggvis - data visualisation
+
+# Install packages
+# base - auto installed
+# ggvis - not installed auto
+
+#install.packages("ggvis")
+
+# CRAN - Comprehensive R archive network
+
+# Once installed - need to load the package into current R session
+# load package = attach to search list
+# list of packages r searches to find variable you want to use
+search()
+# 7 packages are attached by default
+
+# To load
+#library("ggvis")
+
+# Require - also loads packages
+# If package not installed, returns warning rather than error
