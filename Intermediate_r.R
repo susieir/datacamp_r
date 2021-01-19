@@ -480,4 +480,11 @@ my_time2 <- as.POSIXct("1974-07-14 21:11:55 CET")
 my_time2 - my_time  # R displays in days - R auto chooses time periods
 
 # Number of days since Jan 1970
-unclass(my_date)
+unclass(my_date)  # Change back to numeric
+
+# Dedicated R packages for dealing with time
+# lubridate
+# zoo
+# xts
+
+# diff() - calculates the difference between elements of a vector
