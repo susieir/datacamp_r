@@ -392,3 +392,92 @@ li2 <- as.list(c(1,2,3))
 is.list(li2)
 
 unlist(li)  # Flattens list structure and returns vector
+# All coerced to character strings in this example
+
+# append()  # Add elements to vector or list
+# rev()  # Reverses elements in a data structure
+
+# Chapter 5 - Utilities
+# A: Regular expressions
+# Sequence of (meta)characters that form a search pattern to match str
+# Pattern existence
+# Pattern replacement
+# Pattern extraction
+# grep(), grepl()
+# sub(), gsub()
+
+# Useful for data cleaning
+
+# grepl()
+animals <- c("cat", "moose", "impala", "ant", "kiwi")
+grepl(pattern = "a", x = animals)  # Finding animals with an a in name
+
+# Matching for strings that start with an a
+grepl(pattern = "^a", x = animals)
+# Matching for strings that end with an a
+grepl(pattern = "a$", x = animals)
+
+grep(pattern = "a", x = animals)
+# Returns vector of indices that are a match
+# Unlike grepl - returns logical
+
+which(grepl(pattern = "a", x= animals))  # Equiv to grep
+
+# sub(), gsub()
+# sub(pattern = <regex>, replacement = <str>, x = <str>)
+sub(pattern = "a", replacement = "o", x = animals)
+# Replaces a with o - but only looks for first match
+# gsub() - replaces for all
+
+animals <- c("cat", "moose", "impala", "ant", "kiwi")
+
+gsub(pattern = "a|i", replacement = "_", x = animals)
+# Replaces a or i with an _
+
+# .* - matches any character (.) zero or more times (*) (metacharacters)
+# Use .* to chain two regex together
+# \\. - escapes the dot (i.e. uses it as an actual character)
+# \\s - match a space (s is normally a character, \\ makes it a meta character)
+# [0-9]+ - match the numbers 0 to 9, at least once (+)
+# ([0-9]+) - parentheses used to make parts of the matching str avail to define replacement
+# \\1 gets set to the string that is captured by the regex [0-9]+
+
+# B: Times & dates
+today <- Sys.Date()
+today
+
+class(today) # Date object
+
+now <- Sys.time()
+now
+class(now)  # POSIXct - ensures compatible across OS
+
+# Create date objects
+my_date <- as.Date("1971-05-14")
+my_date
+class(my_date)
+
+# as.Date - first tries ISO date ("YYYY-MM-DD")
+# Can set format explicitly
+my_date <- as.Date("1971-14-05", format = "%Y-%d-%m")
+my_date
+
+# Create POSIXct objects
+my_time <- as.POSIXct("1971-05-14 11:25:15")
+my_time
+
+# Date arithmetic
+
+my_date + 1  # Increment by 1 day
+
+my_date2 <- as.Date("1998-09-29")
+my_date2 - my_date  # Returns time difference
+
+# POSIXct arithmetic
+my_time + 1  # +1 seconds
+
+my_time2 <- as.POSIXct("1974-07-14 21:11:55 CET")
+my_time2 - my_time  # R displays in days - R auto chooses time periods
+
+# Number of days since Jan 1970
+unclass(my_date)
