@@ -1,0 +1,36 @@
+---
+title: "Data manipulation with dplyr"
+author: "Susie Irons"
+date: "21/01/2021"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data manipulation with dplyr
+
+### Section 1 - The counties dataset
+
+#### 2015 USA Census
+- County = subregion of a state
+- Glimpse allows you to see a few observations in all columns
+
+```{r}
+library('dplyr')
+library('tigris')
+counties
+glimpse(counties)
+```
+
+#### Select
+- Extracts only particular variables from a dataset
+
+```{r}
+counties %>%
+  select(state, county, population, unemployment)
+```
+
