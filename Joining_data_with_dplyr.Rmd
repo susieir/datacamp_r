@@ -3,16 +3,248 @@ title: "Joining data with dplyr"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+## Chapter 1 - Joining tables
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
+### Section 1 - The inner_join verb
+- The LEGO dataset
+- Import dplyr
 ```{r}
-plot(cars)
+library('dplyr')
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+#### Import the sets table
+```{r}
+setwd("C:\\Users\\susie\\Documents\\R Projects\\Datacamp\\lego_data")
+sets <- read.csv("sets.csv")
+sets
+```
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+#### Import the themes table
+```{r}
+setwd("C:\\Users\\susie\\Documents\\R Projects\\Datacamp\\lego_data")
+themes <- read.csv("themes.csv")
+themes
+```
+
+#### Linking two tables
+- Inner join
+```{r}
+sets %>%
+  inner_join(themes, by = c("theme_id" = "id"))
+```
+
+- Joins sets to themes
+- by - tells inner join to join theme_id in first table to id in second table
+- Cannot have two variables with the same name 
+- Without specifying x and y will be used
+
+#### Customizing your join 
+```{r}
+sets %>%
+  inner_join(themes, by = c("theme_id" = "id"), suffix = c("_set", "_theme"))
+```
+
+- Appends _set or _theme to the columns - makes it much more readable
+
+#### Most common themes
+
+```{r}
+sets %>%
+  inner_join(themes, by = c("theme_id" = "id"), 
+             suffix = c("_set", "_theme")) %>%
+  count(name_theme, sort = TRUE)
+```
+#### Import parts
+```{r}
+setwd("C:\\Users\\susie\\Documents\\R Projects\\Datacamp\\lego_data")
+parts <- read.csv("parts.csv")
+parts
+
+```
+#### Import part_categories
+```{r}
+setwd("C:\\Users\\susie\\Documents\\R Projects\\Datacamp\\lego_data")
+part_categories <- read.csv("part_categories.csv")
+part_categories
+```
+
+### Section 2 - Joining with a one-to-many relationship
+#### Import inventories
+```{r}
+setwd("C:\\Users\\susie\\Documents\\R Projects\\Datacamp\\lego_data")
+inventories <- read.csv("inventories.csv")
+inventories
+
+```
+
+#### Joining sets and inventories
+- When variables have the same name, can just write the name
+
+```{r}
+sets %>%
+  inner_join(inventories, by = "set_num") %>%
+  filter(version != 1)
+```
+- Number of observations increases - each set can have multiple versions
+- Each gets own inventory item
+- Can filter by versions
+
+- Inner join - keeps observation only if it has an exact match between tables
+- Important to pay attention to the number of rows before and after joining
+
+#### Inventory parts
+- Combines inventory and color
+```{r}
+setwd("C:\\Users\\susie\\Documents\\R Projects\\Datacamp\\lego_data")
+inventory_parts <- read.csv("inventory_parts.csv")
+inventory_parts
+```
+
+- Combination of color and part describes a *piece*
+- For an `inner_join`, either direction will yield a table that contains the same info - but columns will appear in a different order
+
+### Section 3 - Joining three or more tables
+- Same approach applies
+```{r}
+sets %>%
+  inner_join(inventories, by = "set_num") %>%
+  inner_join(themes, by = c("theme_id" = "id"),
+             suffix = c("_set", "_theme"))
+```
+- In a series of joins - each will have different by arguments and they may have different suffixes
+
+## Chapter 2 - Left and Right Joins
+
+### Section 1 - The `left_join` verb
+```{r}
+inventory_parts_joined <- inventories %>%
+  inner_join(inventory_parts, by = c("id" = "inventory_id")) %>%
+  select(-id, -version) %>%
+  arrange(desc(quantity))
+
+inventory_parts_joined
+```
+
+- Select to remove id and version variables
+- Sorting in desc order of quantity
+
+#### Filter for batmobile and batwing
+```{r}
+batmobile <- inventory_parts_joined %>%
+  filter(set_num == "7784-1") %>%
+           select(-set_num, -is_spare)
+
+batwing <- inventory_parts_joined %>%
+  filter(set_num == "70916-1") %>%
+  select(-set_num, -is_spare)
+
+batmobile
+batwing
+```
+- Each observation is a lego piece a combination of part and color
+
+#### Joining with multiple columns
+- Inner join - can find out what pieces are in common
+- Joining needs to be by piece - a combination of part and color
+
+```{r}
+batmobile %>%
+  inner_join(batwing, by = c("part_num", "color_id"),
+             suffix = c("_batmobile", "_batwing"))
+```
+#### The left join
+- Keeps parts that are in the batmobile, but not in the batwing
+- Inner join - only keeps obs that appear in both tables
+- If want to keep all the obs in one table - use left join
+
+```{r}
+batmobile %>%
+  left_join(batwing, by = c("part_num", "color_id"), 
+            suffix = c("_batmobile", "_batwing"))
+```
+- The batwing column will now have NAs in it, where they don't appear in the batwing set
+
+- Left join - keep all the observations in the left table, whether or not it occurs in the right table
+
+### Section 2 - The right-join verb
+- Opposite of a left-join
+
+#### Count and sort
+```{r}
+sets %>%
+  count(theme_id, sort=TRUE) %>%
+  inner_join(themes, by = c("theme_id" = "id"))
+```
+- Missing themes that never occurred in the dataset
+- Right join would keep themes that never occur
+```{r}
+sets %>%
+  count(theme_id, sort=TRUE) %>%
+  inner_join(themes, by = c("theme_id" = "id"))
+```
+
+#### Replace NAs
+- From tidyr package
+```{r}
+library(tidyr)
+
+sets %>%
+  count(theme_id, sort=TRUE) %>%
+  right_join(themes, by = c("theme_id" = "id")) %>%
+  replace_na(list(n = 0))
+```
+- Replaces any NA in n column
+
+### Section 3 - Joining tables to themselves
+- Hierarchical tables - parent_id often used to represent hierarchical relationships
+- To explore the relationship between layers of a hierarchical table, can join to itself
+
+#### Child-parent table
+```{r}
+themes %>%
+  inner_join(themes, by = c("parent_id" = "id"),
+             suffix = c("_child", "_parent"))
+```
+#### Lord of the Rings themes: parent
+```{r}
+themes %>%
+  inner_join(themes, by = c("parent_id" = "id"),
+             suffix = c("_child", "_parent")) %>%
+  filter(name_child == "The Lord of the Rings")
+```
+#### Lord of the Rings themes: children
+```{r}
+themes %>%
+  inner_join(themes, by = c("parent_id" = "id"),
+             suffix = c("_child", "_parent")) %>%
+  filter(name_parent == "The Lord of the Rings")
+```
+
+- Cominbing these helps us to understand the shape of our data
+
+## Chapter 3 - Full, semi and anti-joins
+
+### Section 1 - The `full_join` verb
+- Keeps all observations in both tables, whether or not they match to each other
+
+#### Joining batmobile and batwing together
+- Left join - keep all batmobile
+- Right joint - keep all batwing
+- Full join - keeps all observations in both
+```{r}
+batmobile %>%
+  full_join(batwing, by = c("part_num", "color_id"), 
+            suffix = c("_batmobile", "_batwing"))
+```
+- n = 440 - more than either table individually
+
+#### Replace NA: multiple variables
+```{r}
+batmobile %>%
+  full_join(batwing, by = c("part_num", "color_id"), 
+            suffix = c("_batmobile", "_batwing")) %>%
+  replace_na(list(quantity_batmobile = 0,
+                  quantity_batwing = 0))
+```
+list
