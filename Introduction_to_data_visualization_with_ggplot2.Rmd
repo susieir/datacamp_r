@@ -1,0 +1,129 @@
+---
+title: "Introduction to data visualization with ggplot2"
+output: html_notebook
+---
+
+## Chapter 1 - Introduction
+### Section 1 - Introduction
+
+#### Exploratory vs. explanatory analysis
+- Exploratory - confirm and analyse
+- Explanatory - inform and persuade
+
+### Loading dataset
+```{r}
+library(MASS)
+mammals
+```
+
+#### A Scatter plot
+```{r}
+ggplot(mammals, aes(x = body, y = brain)) +
+  geom_point()
+```
+
+#### Explore with a linear model
+- Poor choice, since a few extreme values have a large influence
+```{r}
+ggplot(mammals, aes(x = body, y = brain)) +
+  geom_point(alpha = 0.6) +
+  stat_smooth(
+    method = "lm",
+    color = "red",
+    se = FALSE
+  )
+```
+#### Explore - fine tuning
+- Log transformation allows for a better fit
+```{r}
+ggplot(mammals, aes(x = body, y = brain)) +
+  geom_point(alpha = 0.6) +
+  coord_fixed() +
+  scale_x_log10() +
+  scale_y_log10() +
+  stat_smooth(
+    method = "lm",
+    color = "#C42126",
+    se = FALSE,
+    size = 1
+  )
+```
+
+#### Anscombe's plots
+- Example of how different datasets can lead to the same linear plots despite different relationships
+
+#### Using factors in scatter plots
+- Wrap `factor()` around the variable and the axis will adjust to show only the relevant points
+
+### Section 2 - The grammar of graphics
+- Build on an underlying grammar
+
+#### The grammar of graphics
+- Plotting framework
+- Leland Wilkinson 1999
+- 2 principles
+  - Graphics = distinct layers of grammatical elements
+  - Meaningful plots through aesthetic mappings
+  
+#### The three essential grammatical elements
+- Data - the data-set being plotted
+- Aesthetics - the scales onto which we *map* our data
+- Geometrics - the visual elements used for our plot
+- Themes - all non-data ink
+- Statistics - representations of our data to aid understanding
+- Coordinates - the space on which the data will be plotted
+- Facets - plotting small multiples
+
+#### Understanding variables
+- can use color inside aes
+- can use size inside aes
+- can use shape inside aes - data must be categorical
+
+### Section 3 - ggplot2 layers
+#### ggplot2 package
+- The grammar of graphics is implemented in R
+- Two key concepts:
+  1. Layer grammatical elements
+  2. Aesthetic mappings
+  
+#### Data
+- Bottom layer
+- Using - iris dataset
+```{r}
+iris
+```
+
+#### Aesthetics
+- Next layer
+- Tells us scales we should map our data to
+- Establish aesthetic mappings
+- `sepal.length = x`
+- `sepal.width = y`
+
+#### Geometrics
+- Allows us to choose how the plot will look
+```{r}
+g <- ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_jitter()
+g
+```
+#### Themes
+- Controls all non-data ink on plot
+```{r}
+g <- g +
+  labs(x = "Sepal Length (cm)", y = "Sepal Width (cm)") +
+  theme_classic()
+g
+```
+#### Adding geometries
+- geom_point() - adds points (as in a scatter plot)
+- geom_smooth() - adds a smooth trend curve
+- These can be labelled
+
+#### Changing one geom or every geom
+- Mapping an aesthetic to data variable inside the call to `ggplot()` will change *all* the geoms
+- It is also possible to make changes to *individual* geoms by passing arguments to the `geom_*()` functions
+- E.g. geom_point(alpha = 0.4)
+
+#### Saving plots as variables
+- Plots can be saved as varialbes, which can be added to later on using the `+` operator. This is useful if you want to make multiple related plots from a common base 
