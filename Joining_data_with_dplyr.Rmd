@@ -248,3 +248,147 @@ batmobile %>%
                   quantity_batwing = 0))
 ```
 list
+
+### Section 2 - The semi- and anti- joins
+#### Mutating verbs
+- `inner_join`
+- `left_join`
+- `right_join`
+- `full_join`
+
+- When joining - you end up with new cols you didn't have before
+
+#### Filtering joins
+- Keeps or removes observations from the first table
+- Doesn't add new variables
+- `semi_join()`
+- `anti_join()`
+
+- Semi join
+  - What observations in X are also in Y
+- Anti join
+  - What observations in X are not in Y
+  
+#### Semi join
+- Useful for filtering a table without modifying
+- Don't need a suffix
+```{r}
+batmobile %>%
+  semi_join(batwing, by = c("color_id", "part_num"))
+```
+
+#### The anti join
+- Also don't need a suffix
+```{r}
+batmobile %>%
+  anti_join(batwing, by = c("color_id", "part_num"))
+```
+### Section 3 - Visualizing set differences
+
+#### Aggregating sets into colors
+- Batmobile
+```{r}
+batmobile_colors <- batmobile %>%
+  group_by(color_id) %>%
+  summarize(total = sum(quantity))
+
+batmobile_colors
+```
+- Batwing
+```{r}
+batwing_colors <- batwing %>%
+  group_by(color_id) %>%
+  summarize(total = sum(quantity))
+
+batwing_colors
+```
+
+#### Comparing color schemes of sets
+- Combine both tables into single table and replace NAs
+```{r}
+all_colors <- batmobile_colors %>%
+  full_join(batwing_colors, by = "color_id", suffix = c("_batmobile", "_batwing")) %>%
+  replace_na(list(total_batmobile = 0, total_batwing = 0))
+
+all_colors
+```
+#### Adding the color names
+- Using inner join
+```{r}
+# Import colors
+setwd("C:\\Users\\susie\\Documents\\R Projects\\Datacamp\\lego_data")
+colors <- read.csv("colors.csv")
+colors
+
+# Join to all_colors
+all_colors %>%
+  inner_join(colors, by = c("color_id" = "id"))
+```
+#### Normalize each of the colors - turn into fractions of total
+```{r}
+all_colors %>%
+  inner_join(colors, by = c("color_id" = "id")) %>%
+  mutate(total_batmobile = total_batmobile / sum(total_batmobile),
+         total_batwing = total_batwing / sum(total_batwing))
+```
+#### The difference between fractions
+- Relative difference between colors in each set
+```{r}
+colors_joined <- all_colors %>%
+  inner_join(colors, by = c("color_id" = "id")) %>%
+  mutate(total_batmobile = total_batmobile / sum(total_batmobile),
+         total_batwing = total_batwing / sum(total_batwing),
+         difference = total_batmobile - total_batwing)
+
+colors_joined
+```
+#### Visualiseing the data
+
+```{r}
+# Not working - # missing from from of colors
+library(ggplot2)
+library(forcats)
+
+color_palette <- setNames(colors_joined$rgb, colors_joined$name)
+
+colors_joined %>%
+  mutate(name = fct_reorder(name, difference)) %>%
+  ggplot(aes(name, difference, fill = name)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = color_palette, guide = FALSE)
+```
+
+## Chapter 4 - Case study - joins on stack overflow data
+### Section 1 - Stackoverflow questions
+- Intermediate table - links IDs, no actual tables
+- Common in web databases
+### Section 2 - The bind_rows verb
+- In some situations - may want to stack tabes on top of one another
+```{r}
+questions %>%
+  bind_rows(answers)
+```
+- When combining tables - you can mutate in an extra col that distinguishes each of them before combining
+```{r}
+questions_type <- questions %>%
+  mutate(type = "question")
+
+answers_type <- answers %>%
+  mutate(type = "answer")
+
+posts <- bind_rows(questions_type, answers_type)
+posts
+```
+
+#### Aggregating
+- Could then use table for aggregating
+
+#### Creating date variable
+```{r}
+library(lubridate)
+
+posts %>%
+  mutate(year = year(creation_date))
+```
+
