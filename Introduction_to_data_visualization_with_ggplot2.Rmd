@@ -126,4 +126,213 @@ g
 - E.g. geom_point(alpha = 0.4)
 
 #### Saving plots as variables
-- Plots can be saved as varialbes, which can be added to later on using the `+` operator. This is useful if you want to make multiple related plots from a common base 
+- Plots can be saved as variables, which can be added to later on using the `+` operator. This is useful if you want to make multiple related plots from a common base 
+
+
+## Chapter 2 - Aesthetics
+### Section 1 - Visible aesthetics
+#### Mapping onto the X and Y axes
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point()
+```
+
+- Mapping sepal length onto X aesthetic, sepal width onto y aesthetic
+- species can be mapped onto the color aesthetic
+- Map aesthetics in the `aes()` function
+- Could call in the `geom_*()` function
+  - Typically only necessarily if all layers should *not* inherit the same aesthetics
+  - Or if mixing different data sources
+- Try to keep data and ggplot aesthetics in the same function definition 
+- Typical visible aesthetics
+  - x
+  - y
+  - fill - fill color
+  - color - color of points, outlines of other geoms
+  - size - area of radius of points, thinkness of lines
+  - alpha - transparency
+  - linetype - line dash pattern
+  - labels - text on a plot or axes, categorical data only
+  - shape - point shape, categorical data only
+  
+- Function as both aes and attributes
+
+#### All about aesthetics: color, shape and size
+- Aesthetics you can consider within aes:
+  - `x`
+  - `y`
+  - `color`
+  - `fill`
+  - `size`
+  - `alpha`
+  - `labels`
+  - `shape` - 1 (empty circles)
+- Common convention - you don't name the `x` and `y` arguments to `aes()` as they always come first, but you do name the other arguments
+
+#### All about aesthetics: color vs. fill
+- `color` typically changes the *outline* of a geom and the `fill` aesthetic changes the inside
+- `geom_point()` is an exception - you use `color` (not `fill`) for the point color, but some shapes have special behaviour
+- The default `geom_point()` uses `shape = 19`, a solid circle
+- An alternative is `shape = 21` - a circle that allows you to use *both* `fill` for the inside and `color` for the outside 
+
+### Section 2 - Using attributes
+- Attributes - how something looks
+- All visible aesthetics also exist as attributes
+- Attributes always called in the geom layer
+```{r}
+ggplot(iris, aes(x = Sepal.Length, x = Sepal.Width)) +
+  geom_point(color = 'red')
+```
+
+- e.g. Color - attribute set using color argument
+-  size
+- shape
+
+- You can use all the aesthetics as attributes (but as attributes, they are not mapped to variables)
+- E.g. Setting labels to row names `labels = rownames(series)`
+
+### Section 3 - Modifying aesthetics
+#### Positions
+- Adjustment for overlapping
+  - `identity` - the most straightforward position, default - value in df is where it is positioned in the plot
+  - `dodge` - for bars this unstacks bars and sets side-by-side
+  - `stack`
+  - `fill`
+  - `jitter`
+  - `jitterdodge`
+  - `nudge`
+  
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = "identity")
+```
+- Too much overplotting to distinguish the points
+- Need to add some random noise on the x and y axes to see regions of high density - jittering
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = "jitter")
+```
+
+- Each position type can be used as an argument or accessed as a function
+```{r}
+posn_j <- position_jitter(0.1)
+
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = posn_j)
+```
+- Benefits of using as function
+   - Can set arguments for the position - such as how much random noise should be added
+   - Allows for consistency across plots and layers
+- Applies for all other position attributes
+
+#### Scale functions
+- Each of the aesthetics is a scale that we map the data onto
+- We can access all scales with the `scale_` functions
+- The second part specifies which scale we want to modify
+- All aesthetics have an associated scale function
+  - `scale_x_*()`
+  - `scale_y_*()`
+  - `scale_color_*()` (also `scale_colour_*()`)
+  - `scale_fill_*()`
+  - `scale_shape_*()`
+  - `scale_linetype_*()`
+  - `scale_size_*()`
+- Scale functions - must be appropriate for the type of data we are using
+  - **`scale_x_continuous()`**
+  - `scale_y_*()`
+  - **`scale_color_discrete()`**
+    - Alternatively, `scale_colour_*()`
+  - `scale_fill_*()`
+  - `scale_shape_*()`
+  - `scale_linetype_*()`
+  - `scale_linetype_*()`
+  - `scale_size_*()`
+
+#### `scale_*_*()
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = 'jitter') +
+  scale_x_continuous("Sepal Length") +
+  scale_color_discrete("Species")
+```
+
+#### The limits argument
+- Describe the scales range
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = 'jitter') +
+  scale_x_continuous("Sepal Length",
+                     limits = c(2,8)) +
+  scale_color_discrete("Species")
+```
+#### The breaks argument
+- Control tickmarks positions
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = 'jitter') +
+  scale_x_continuous("Sepal Length",
+                     limits = c(2,8),
+                     breaks = seq(2, 8, 3)) +
+  scale_color_discrete("Species")
+```
+#### The expand argument
+- Numerical factor of length 2, giving a multiplicative, additive constant, used to expand the range of the scales so that there is a small gap between the data and the axes
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = 'jitter') +
+  scale_x_continuous("Sepal Length",
+                     limits = c(2,8),
+                     breaks = seq(2, 8, 3),
+                     expand = c(0,0)) +
+  scale_color_discrete("Species")
+```
+#### The labels argument
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = 'jitter') +
+  scale_x_continuous("Sepal Length",
+                     limits = c(2,8),
+                     breaks = seq(2, 8, 3),
+                     expand = c(0,0),
+                     labels = c("Setosa", "Versicolor", "Virginica")) +
+  scale_color_discrete("Species")
+```
+
+#### labs()
+- To quickly change the axis labels
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point(position = 'jitter') +
+  labs(x = "Sepal Length", y = "Sepal Width", color = "Species")
+```
+
+#### Updating aesthetic labels
+- `scale_color_manual()` 
+  - Defines the properties of the color scale (i.e. axis)
+  - The first argument sets the legend title
+  - `values` is a named vector of colors to use
+  
+#### Setting a dummy aesthetic
+- You can make univariate plots in `ggplot2` but you will need to add a fake y axis by mapping `y` to zero
+- When setting y-axis limits, you can specify the limits as separate arguments, or as a single numeric vector. That is, `ylim(lo, hi)` or `ylim(c(lo, hi))`
+
+  
+  
