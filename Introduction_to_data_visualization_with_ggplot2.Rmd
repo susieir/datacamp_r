@@ -180,7 +180,7 @@ ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
 - All visible aesthetics also exist as attributes
 - Attributes always called in the geom layer
 ```{r}
-ggplot(iris, aes(x = Sepal.Length, x = Sepal.Width)) +
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width)) +
   geom_point(color = 'red')
 ```
 
@@ -334,5 +334,210 @@ ggplot(iris, aes(x = Sepal.Length,
 - You can make univariate plots in `ggplot2` but you will need to add a fake y axis by mapping `y` to zero
 - When setting y-axis limits, you can specify the limits as separate arguments, or as a single numeric vector. That is, `ylim(lo, hi)` or `ylim(c(lo, hi))`
 
+### Section 4: Aesthetics best practices
+#### Which aesthetics?
+- Some clear guidelines to follow
+- Jacques Bertin - The Semiology of Graphics, 1967
+- William Cleveland
+  - The Elements of Graphing Data, 1985
+  - Visualizing Data, 1993
   
+#### Form follows function
+- Function depends on audience
+- Primary:
+  - Accurate and efficient representations
+- Secondary:
+  - Visually appealing, beautiful plots
   
+- Guiding principles:
+  - Never - misrepresent or obscure data, or confuse viewers with complexity
+  - Always - consider the audience and purpose of every plot
+  
+#### Extracting information from data
+- Encoding numbers and text into visual medium
+
+#### The best choices for aesthetics
+- Efficient - provides a faster overview than numeric summaries
+- Accurate - minimises information loss
+
+#### Choices for mapping continuous variables
+![Plotting continuous variables](Plotting_continuous_variables.png)
+- Color good for categorical variables
+- Watch out for overplotting
+  - Could adjust position
+  
+## Chapter 3 - Geometrics
+- Determines how the plot actually looks
+### Section 1 - Scatter plots
+- Currently 48 geometries
+
+#### Common plot types
+- Scatter plots
+  - points, jitter, abline, smooth, count
+  - x and y essential
+  - optional - alpha, color, fill, shape, size, stroke  
+  
+#### Scatter plots
+- Each geom can accept specific aesthetic mappings, e.g. geom_point()
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width)) +
+  geom_point()
+```
+### Geom-specific aesthetic mappings
+```{r}
+# Same as plot below
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width)) +
+  geom_point()
+
+# Same as plot above
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width)) +
+  geom_point(aes(color = Species))
+
+```
+
+- You can control aesthetic mappings of each layer independently
+
+#### Summary statistics
+```{r}
+library('dplyr')
+iris %>%
+  group_by(Species) %>%
+  summarise_all(mean) -> iris.summary # Summary statistics
+```
+
+- ggplot2 can take care of stats for us
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 col = Species)) +
+  # Inherits both data and aes from ggplot
+  geom_point() +
+  # Different data, but inherited aes
+  geom_point(data = iris.summary, shape = 15, size = 5)
+```
+
+![Shape attribute values](shape_attribute_values.png)
+ - 21 - 25 have shape and fill that can be controlled independently
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, col = Species)) +
+  geom_point() + 
+  geom_point(data = iris.summary, shape = 21, size = 5, fill = "black", stroke = 2)
+```
+  - Note - not fair to plot the mean without some indication of sd - further info in the stats section
+  
+#### Position = "jitter"
+```{r}
+ggplot(iris,
+       aes(x = Sepal.Length,
+           y = Sepal.Width,
+           col = Species)) +
+  geom_point(position = "jitter")
+```
+
+- `geom_jitter()` a short-cut to `geom_point(position = "jitter")`
+- Combine jittering with alpha-blending if necessary
+- Hollow circules also help (`shape = 1`)
+  - If use this, not also necessary to use alpha blending
+- Jitter can be a geom itself (`geom_jitter()`), an argument in geom_point() (`position = jitter`), or a position function (i.e. `position_jitter()`)  
+
+### Section 2 - Histograms
+#### Common plot types
+- Bar plots
+  - Histogram, bar, col, errorbar
+
+#### Histograms
+- A plot of binned values
+  - i.e. a statistical function
+```{r}
+ggplot(iris, aes(x = Sepal.Width)) + geom_histogram()
+```
+- Geom is associated with a particular statistic - 'stat_bin()'
+  - Default = 30
+```{r}
+ggplot(iris, aes(x = Sepal.Width)) + 
+  geom_histogram(binwidth = 0.1)
+```
+
+- Always set meaningful bin widths for your data
+- No spaces between bars
+- x-labels are between bars
+
+#### Re-position tick marks
+```{r}
+ggplot(iris, aes(x = Sepal.Width)) + 
+  geom_histogram(binwidth = 0.1,
+                 ceneter = 0.05)
+```
+
+#### Different species
+```{r}
+ggplot(iris, aes(x = Sepal.Width, fill = Species)) +
+  geom_histogram(binwidth = 0.1,
+                 ceneter = 0.05,
+                 position = 'stack')
+```
+- Difficult to see if bars overlapping or stacked - default is stacked
+- Can also `dodge` bars - offset
+
+```{r}
+ggplot(iris, aes(x = Sepal.Width, fill = Species)) +
+  geom_histogram(binwidth = 0.1,
+                 ceneter = 0.05,
+                 position = 'dodge')
+```
+
+- `position = "fill"`
+  - Fills to represent the proportion of all observations
+  
+```{r}
+ggplot(iris, aes(x = Sepal.Width,
+                 fill = Species)) +
+  geom_histogram(binwidth = 0.1,
+                 center = 0.05,
+                 position = 'fill')
+```
+- An internal variable called `density`, can be accessed by using the `..` notation, i.e. `..density..`
+- Plotting this variable will show the relative frequency, which is the height times the width of each bin (i.e. normalises the histogram)
+
+### Section 3 - Bar plots
+# Bar plots, with a categorical x-axis
+- Use `geom_bar()` or `geom_col()`
+  - `geom_bar()` 
+    - stat = "count"
+    - counts the number of cases at each x position
+  - `geom_col()`
+    - stat = "identity"
+    - plots actual values
+- All positions from before are available
+- Two types
+  - Absolute counts
+  - Distributions
+
+#### Habits of mammals
+```{r}
+str(msleep)
+ggplot(msleep, aes(vore)) +
+  geom_bar()
+```
+
+- Default value - bin set for stat argument
+- Useful for quick visual output
+
+#### Plotting distributions instead of absolute counts
+```{r}
+# Calculate descriptive statistics
+library(tidyr)
+iris_summ_long <- iris %>%
+  select(Species, Sepal.Width) %>%
+  gather(key, value, -Species) %>%
+  group_by(Species) %>%
+  summarise(avg = mean(value),
+            stdev = sd(value))
+
+iris_summ_long
+```
+
