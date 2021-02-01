@@ -13,6 +13,7 @@ output: html_notebook
 ### Loading dataset
 ```{r}
 library(MASS)
+library(ggplot2)
 mammals
 ```
 
@@ -541,3 +542,216 @@ iris_summ_long <- iris %>%
 iris_summ_long
 ```
 
+#### Plotting distributions
+```{r}
+ggplot(iris_summ_long, aes(x = Species,
+                           y = avg)) +
+  geom_col() +  # Use geom_col as already calculated
+  geom_errorbar(aes(ymin = avg - stdev,
+                    ymax = avg + stdev),
+                width = 0.1)
+```
+
+### Section 4 - Line plots
+```{r}
+data(beavers)
+str(beaver1)
+str(beaver2)
+```
+#### Beaver
+```{r}
+ggplot(beaver1, aes(x = time, y= temp,
+                    color = factor(activ))  # Color each segment of line according to weather beaver was active or not
+       ) + geom_line()
+```
+#### Using aesthetics to differentiate multiple series
+Options include:
+  - `linetype = Species`
+  - `size = Species`
+  - `color = Species`
+  - `fill = Species` - defaults to geom_stack
+  
+#### Aesthetics for categorical variables
+![Aesthetics for categorical variables](aesthetics_for_cat_variables.png)
+
+#### geom_ribbon()
+- Used for looking at overlapping areas
+- Need to force y-min to be 0
+```{r}
+ggplot(fish, aes(x = Year,
+                 y = Capture,
+                 fill = Species)) +
+  geom_ribbon(aes(ymax = Capture, ymin = 0), alpha = 0.3)
+```
+
+#### Using groupings
+
+```{r}
+ggplot(fish.tidy, aes(x = Year, y = Capture, color = Species)) +
+  geom_line(aes(group = Species))
+```
+
+## Chapter 4 - Themes
+### Section 1 - Themes from scratch
+- Controls all non-data ink, i.e. visual elements not part of the data
+- Three types
+  - Text -> `element_text()`
+  - Line -> `element_line()`
+  - Rectangle -> `element_rect()`
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_jitter(alpha = 0.6)
+```
+#### Text elements
+![Plot text elements](text_elements.png)
+  
+#### Adjusting theme elements
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_jitter(alpha = 0.6) +
+  theme(axis.title = element_text(color = "blue"))  # Changes the axis font colours to blue
+```
+
+#### Line elements
+![Plot line elements](line_elements.png)
+
+#### Rect elements
+![Rectangle elements](rect_elements.png)
+
+#### Hierarchical naming reflects inheritance rules
+- If we change text using an upstring argument, all downstream text will be affected
+
+#### `element_blank()`
+- Can be used to remove any item
+
+#### Modifying whitespace
+- Whitespace - all non-visible margins and spacing in the plot
+- To set a single whitespace value, use `unit(x, unit)` where `x` is the amount and `unit` is the unit of measure
+- Borders require you to set 4 positions, so use `margin(top, right, bottom, left, unit)`
+  - To remember the order think TRouBLe
+- Default unit is `pt` (points), which scales well with text. Other options include "cm", "in" and "lines" (of text)
+
+### Section 2 - Theme Flexibility
+#### Ways to use themes
+1. From scratch
+2. Theme layer object
+3. Built-in themes - ggplot2 or ggthemes packages
+4. Built-in themes from other packages
+5. Update/set default theme
+
+#### Defining theme objects
+- Useful when you have many plots
+- Provides consistency in style
+- Apply a specific theme everywhere
+
+```{r}
+z <- ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_jitter(alpha = 0.6) +
+  scale_x_continuous("Sepal Length (cm)", limits = c(4,8), expand = c(0,0)) +
+  scale_y_continuous("Sepal Width (cm)", limits = c(1.5,5), expand = c(0,0)) +
+  scale_color_brewer("Species", palette = "Dark2", labels = c("Setosa", "Versicolor", "Virginica"))
+z
+```
+#### Defining theme objects
+```{r}
+z + theme(text = element_text(family = "serif", size = 14),
+          rect = element_blank(),
+          panel.grid = element_blank(),
+          title = element_text(color = "#8b0000"),
+          axis.line = element_line(color = "black"))
+```
+#### Defining theme objects
+- Saving layer as object
+```{r}
+theme_iris <- theme(text = element_text(family = "serif", size = 14),
+          rect = element_blank(),
+          panel.grid = element_blank(),
+          title = element_text(color = "#8b0000"),
+          axis.line = element_line(color = "black"))
+```
+
+#### Reusing theme objects
+```{r}
+z + theme_iris
+```
+#### Reusing theme objects
+```{r}
+m <- ggplot(iris, aes(x = Sepal.Width)) +
+  geom_histogram(binwidth = 0.1,
+                 center = 0.05)
+m
+```
+```{r}
+m +
+  theme_iris
+```
+
+- You can add a theme as well as amend specific elements
+```{r}
+m +
+  theme_iris +
+  theme(axis.line.x = element_blank())
+```
+#### Using built-in themes
+- Use `theme_*()` functions to access built-in themes
+```{r}
+z + theme_classic()
+```
+
+- Can modify any specific theme element
+
+#### The ggthemes package
+- Use the ggthemes package for more functions
+- tufte - removes all non-data ink and sets font to serif
+```{r}
+library(ggthemes)
+z +
+  theme_tufte()
+```
+#### Updating themes
+- Updating done with `theme_update` function
+- Updates default and saves to the object original
+```{r}
+original <- theme_update(text = element_text(family = "serif", size = 14),
+                        rect = element_blank(),
+                        panel.grid = element_blank(),
+                        title = element_text(color = "#8b0000"),
+                        axis.line = element_line(color = "black"))
+```
+
+#### Setting themes
+```{r}
+theme_set(original)
+```
+
+#### Built-in themes
+- Out of the box solutions
+  - `theme_gray()` - default
+  - `theme_bw()` - useful when you use transparency
+  - `theme_classic()` - is more traditional
+  - `theme_void()` - removes everything but the data
+  
+#### Exploring ggthemes
+- `theme_fivethirtyeight()`
+- `theme_tufte()`
+- `theme_wsj()`
+
+#### Setting themes
+- Reusing a theme across many plots helps to provide a consistent style. Options for doing this:
+  1. Assign the theme to a variable, and add it to each plot
+  2. Set your theme as the default using `theme_set()`
+  
+### Section 3 - Effective explanatory plots
+#### First explanatory plots - distributions
+```{r}
+ggplot(gm2007_full_arranged, aes(index, lifeExp)) +
+  geom_point()
+```
+
+- Removing non-data ink makes for a great plot
+- Adding a threshold line helps to orientate the viewer
+- `geom_curve()` - good for joining curved lines, e.g. adding little arrows on plots
+- `geom_segment()` adds line segments - aesthetics - `xend` and `yend`
+- `geom_text()` - adds labels
+- `geom_vline()` - adds vertical lines
