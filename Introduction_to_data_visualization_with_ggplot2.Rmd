@@ -755,3 +755,216 @@ ggplot(gm2007_full_arranged, aes(index, lifeExp)) +
 - `geom_segment()` adds line segments - aesthetics - `xend` and `yend`
 - `geom_text()` - adds labels
 - `geom_vline()` - adds vertical lines
+
+
+## Chapter 1 - Intermediate data visualisation with ggplot2
+### Section 1 - Stats with geoms
+#### Statistics layer
+- Two categories of function
+  - Called within a geom
+  - Called independently
+
+- `stats_`
+
+#### geom_ <-> stat_
+```{r}
+p <- ggplot(iris, aes(x = Sepal.Width))
+p + geom_histogram()
+```
+- Could have produced the same result if we had used `geom_bar()`
+
+```{r}
+p <- ggplot(mtcars, aes(x = factor(cyl), fill = factor(am)))
+p + geom_bar()
+p + stat_count()
+```
+
+- `geom_bar()` calls `stat_count()` under the hood and vice versa
+
+#### The geom_/stat_ connection
+- `stat_bin()` -> `geom_histogram()`, `geom_freqpoly()`
+- `stat_count()` -> `geom_bar()`
+- `stat_smooth()` -> `geom_smooth()`
+- `stat_boxplot()` -> `geom_boxplot()` -- useful for summarising data
+- `stat_bindot()` -> `geom_dotplot()` -- useful for v. large datasets
+- `stat_bin2d()` -> `geom_bin2d()` -- useful for v. large datasets
+- `stat_binhex()` -> `geom_hex()`
+- `stat_contour()` -> `geom_contour()` -- useful for v. large datasets
+- `stat_quantile()` -> `geom_quantile()`
+- `stat_sum()` -> `geom_count()`
+
+- Generally don't have to call the functions directly
+
+#### `stat_smooth()`
+- Can be accessed with `geom_smooth()`
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point() +
+  geom_smooth()
+```
+
+- Standard error is shown as a grey ribbon behind smooth is by default 95% CI
+- Can remove by setting `se` arg to FALSE
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point() +
+  geom_smooth(se = FALSE)
+```
+- Message: "geom_smooth() using method = 'loess' and formula 'y ~ x'
+- Loess - non-parametric smoothing algorithm, used when n<1000
+- Works by calculating a weighted mean, by passing a sliding window along the x-axis and is a valuable tool in exploratory data analysis
+- Span argument controls the degree of smoothing
+  - `geom_smooth(span = 0.4)` - size of sliding window, smaller spans are more noisy
+
+  
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point() +
+  geom_smooth(se = FALSE, span = 0.4)
+```
+  
+-  The method argument can also define parametric models, such as "lm", "glm", "rlm" and "gam"
+- Where n>1000, the method defaults to "gam"
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm")
+```
+- In both the "loess" and "lm" examples, the model is calculated on groups defined by color
+
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point() +
+  geom_smooth(method = "lm", fullrange = TRUE)
+```
+- By default, each model is bound to the limits of its own group, but for parametric methods, we can use the full range argument to make predictions over the full-range - the error increases the further away from our data set we attempt to define an estimate
+- Smoothing can be accessed using the geom_smooth function or the stat_smooth function
+- LOESS isn't great on small sections of data - default span is 0.9. A lower span will result in a better fit, but risks overfitting
+
+#### Grouping variables
+- `group` aesthetic is invisible
+- Setting `group = 1` will reduce all color groupings (for example) into a single group
+  - Can add it to the `stat_smooth` function, within `aes`
+
+### Section 2 - Stats: sum and quantile
+#### Causes of overplotting and solutions
+1. Large datasets -> alpha-blending, hollow circles, point size
+2. Aligned values on a single axis -> As above, plus change position
+3. Low-precision data -> position: jitter
+4. Integer data -> position: jitter
+
+#### Plot counts to overcome overplotting
+For low-precision and integer data can use `geom_count()` - plots count at each location
+
+```{r}
+p <- ggplot(iris, aes(Sepal.Length, Sepal.Width))
+p + geom_point()
+```
+
+#### Jittering may give the wrong impressions
+- It may suggest there is more precision than there actually is
+- Should always state that you're using jitter
+```{r}
+p + geom_jitter(alpha = 0.5,
+                width = 0.1,
+                height = 0.1)
+```
+
+#### `geom_count()`
+- Counts the no of obs at observation, then maps onto size (mapped onto area of circle - more easily intuited than radius)
+- `stat_sum()` gives the exact same plot
+```{r}
+p +
+  geom_count()
+```
+
+#### Over-plotting can still be a problem¬
+```{r}
+ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+  geom_count(alpha = 0.4)
+```
+#### geom_quantile()
+- Allows us to model quantiles, which are robust, as opposed to linear models, which model the non-robust mean
+- We can choose any quantile we're interested in, such as the median (Q2)
+- A typical case of using quantile regression would be when you have heteroscedasticity, where the variance across the predictor variable is not consistent, in which case linear models may not be valid
+
+#### Dealing with heteroscedasticity
+```{r}
+library(AER)
+data(Journals)
+
+p <- ggplot(Journals,
+            aes(log(price/citations),
+                log(subs))) +
+  geom_point(alpha = 0.5)
+p
+```
+#### Using `geom_quantiles()`
+```{r}
+p +
+  geom_quantile(quantiles = c(0.05, 0.50, 0.95))
+```
+
+- Quantile predicts the quantile response (e.g. the median) from the explanatory variables
+
+#### Using stat_sum
+- `stat_sum()` allows a special variable, `..prop..` to show the *proportion* of values within the dataset
+
+### Section 3 - Stats outside geoms
+#### Basic plot
+```{r}
+ggplot(iris, aes(x = Species,
+                 y = Sepal.Length)) +
+  geom_jitter(width = 0.2)
+```
+
+#### Calculating statistics
+- A typical way to summarise the data would be to take the mean and standard deviation or the 95% confidence interval
+```{r}
+set.seed(123)
+xx <- rnorm(100)
+
+# Hmisc
+library(Hmisc)
+smean.sdl(xx, mult = 1)  # Returns mean +/- one sd as a named vector
+
+#ggplot2
+mean_sdl(xx, mult = 1)  # Converts vector to a df, renaming variables to match ggplot2 aesthetics
+```
+
+#### stat_summary()
+- Call mean_sdl using the fun.data argument of the stat_summary function
+- By default, we get geom_pointrange(), which requires y, ymin and ymax, excactly what is returned by mean_sdl
+```{r}
+ggplot(iris, aes(x = Species,
+                 y = Sepal.Length)) +
+  stat_summary(fun.data = mean_sdl,
+               fun.args = list(mult = 1))
+```
+- For errorbars we can just calculate the mean and use "point" as the geom, then we can call mean_sdl using the "errorbar" geom, where can can also set the width of the errorbars
+```{r}
+ggplot(iris, aes(x = Species,
+                 y = Sepal.Length)) +
+  stat_summary(fun.y = mean,
+               geom = 'point') +
+  stat_summary(fun.data = mean_sdl,
+               fun.args = list(mult = 1),
+               geom = "errorbar",
+               width = 0.1)
+```
+
+- Stop watching at 2mins
