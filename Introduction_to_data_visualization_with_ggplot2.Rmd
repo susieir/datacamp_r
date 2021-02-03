@@ -1,7 +1,9 @@
 ---
-title: "Introduction to data visualization with ggplot2"
+title: "Data visualization with ggplot2"
 output: html_notebook
 ---
+
+# Introduction to data visualisation with ggplot2
 
 ## Chapter 1 - Introduction
 ### Section 1 - Introduction
@@ -756,6 +758,7 @@ ggplot(gm2007_full_arranged, aes(index, lifeExp)) +
 - `geom_text()` - adds labels
 - `geom_vline()` - adds vertical lines
 
+# Intermediate data visualisation with ggplot2
 
 ## Chapter 1 - Intermediate data visualisation with ggplot2
 ### Section 1 - Stats with geoms
@@ -967,4 +970,156 @@ ggplot(iris, aes(x = Species,
                width = 0.1)
 ```
 
-- Stop watching at 2mins
+#### 95% confidence interval
+
+```{r}
+ERR <- qt(0.975, length(xx) - 1) * (sd(xx) / sqrt(length(xx)))
+mean(xx)
+
+mean(xx) + (ERR * c(-1, 1)) # 95% confidence interval
+
+mean_cl_normal(xx) # Calculates mean and upper and lower bounds of the 95% confidence interval, calculated using the t-distribution
+```
+#### Other stat_ functions
+- stat_summary() - summarize y values at distinct x values
+- stat_function() - compute y values from a function of x values
+- stat_qq() - perform calculations for a quantile-quartile plot
+
+#### Normal distribution
+- For a stat function we can specify any function and produce the theoretical probability distribution as a line
+```{r}
+mam.new <- data.frame(body = log10(mammals$body))
+
+ggplot(mam.new, aes(x = body)) +
+  geom_histogram(aes(y = ..density..)) +
+  geom_rug() + # Adds tick marks on the bottom of plot
+  stat_function(fun = dnorm, color = "red",
+                args = list(mean = mean(mam.new$body),
+                            sd = sd(mam.new$body)))
+```
+#### QQ plot
+- Allow us to compare our data to a distribution
+- Plot sample against a theoretical distribution, like the normal and draw a line intersecting the scatter plot at the first and third quartiles
+- The closer that our data aligns to this line, the more closely it matches the theoretical distribution in question
+```{r}
+ggplot(mam.new, aes(sample = body)) +
+  stat_qq() +
+  geom_qq_line(col = "red")
+```
+#### Preparations
+- Establishing positions and base layer as independent objects will allow us to recycle them easily in many layers, or plots
+- Positions:
+  - `position_jitter()` - adds jittering, e.g. for points
+  - `position_dodge()` - dodges geoms, e.g. bar, col, boxplot etc.
+  - `position_jitterdodge()` - jitters and dodges geoms, e.g. points
+
+#### Plotting variations
+- *Summary statistics* refer to a combination of *location* (mean or median) and *spread* standard deviation or confidence interval
+- These metrics are calculated in `stat_summary()` by passing a function to the `fun.data` argument
+- `mean_sdl()` calculates multiples of the standard deviation
+- `mean_cl_normal()` calculates the t-corrected 95% confidence interval
+- Arguments to the data function are passed to `stat_summary()`'s `fun.args` argument as a list
+
+## Chapter 2 - Coordinates
+### Section 1 - The coordinates layer
+#### Coordinates layer
+- Controls the dimensions of your plot
+- Composed of functions named coord_*
+  - Most common - `coord_cartesian()`
+
+#### Zooming in
+- `coord_cartesian(xlim = ...)`
+- Alternatively, can set args in `scale_x_continuous(limits = ...)`
+- Or, use `xlim()` or `ylim()`
+
+#### Original plot
+```{r}
+iris.smooth <- ggplot(
+  iris,
+  aes(x = Sepal.Length,
+      y = Sepal.Width,
+      color = Species)
+) +
+  geom_point(alpha = 0.7) +
+  geom_smooth()
+
+iris.smooth
+```
+#### `scale_x_continuous()`
+- When zooming in using `scale_x_continuous` - we're presented with some important warning messages
+- 95 rows removed - limits were a smaller range than the data
+```{r}
+iris.smooth +
+  scale_x_continuous(limits = c(4.5, 5.5))
+```
+#### `xlim()`
+- Quick and dirty - call `xlim()` as a function itself
+- Has the same effect
+```{r}
+iris.smooth +
+  xlim(c(4.5, 5.5))
+```
+ #### `coord_cartesian()`
+ - LOESS curve continues past data
+ - Models look the same in the original plot
+```{r}
+iris.smooth +
+  coord_cartesian(xlim = c(4.5, 5.5))
+```
+ - Changing x and y limits should be used with caution
+ - Don't play with them until you've seen the data
+ 
+ #### Aspect ratio
+ - Can be achieved with the coordinates layer
+ - Height-to-width aspect ratio
+ - Watch out for deception!
+ - No systematic method
+ - Typically use 1:1 ratio where the units of measure are the same
+ 
+ #### Sunspots
+```{r}
+library(zoo)
+sunspots.m <- data.frame(
+  year = index(sunspot.month),
+  value = reshape2::melt(sunspot.month)$value)
+
+ggplot(sunspots.m, aes(x = year, y = value)) +
+  geom_line() +
+  coord_fixed() # Default 1:1 aspect ratio
+```
+```{r}
+ggplot(sunspots.m, aes(x = year, y = value)) +
+  geom_line() +
+  coord_fixed(0.055)
+```
+- `coord_fixed()` with a high `ratio` is often useful for long time series
+
+#### Expand and clip
+- `expand` sets a buffer margin around the plot, so data and axes don't overlap. Setting `expand` to 0 draws the axes to the limit of the data
+- `clip` decides whether the plot elements that would lie outside the plot panel are displayed or ignored ("clipped")
+
+### Section 2 - Coordinates vs. scales
+- Using the cood layer to plot transformations
+#### Plot the raw data
+```{r}
+ggplot(msleep, aes(bodywt, y = 1)) +
+  geom_jitter() +
+  scale_x_continuous(limits = c(0, 7000),
+                     breaks = seq(0, 7000, 10000))
+```
+- Data is positively skewed
+  - A common transformation for positively skewed data is a natural, base e, logarithm, or the more intuitive common, base10 logarithm
+
+#### Transform the raw data
+- We can transform the data before we begin plotting
+- Or do it on the fly within the aes function (as below)
+- Axis labels are the log transformed values
+- E.g. 4 is the log(10) of 10,000 kilograms - can be a bit misleading
+```{r}
+ggplot(msleep, aes(log10(bodywt), y = 1)) +
+  geom_jitter() +
+  scale_x_continuous(limits = c(-3, 4),
+                     breaks = -3:4)
+```
+
+- Stopped with 2mins to go
