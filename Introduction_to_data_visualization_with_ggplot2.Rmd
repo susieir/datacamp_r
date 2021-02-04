@@ -1122,4 +1122,203 @@ ggplot(msleep, aes(log10(bodywt), y = 1)) +
                      breaks = -3:4)
 ```
 
-- Stopped with 2mins to go
+#### Add logtick annotation
+```{r}
+ggplot(msleep, aes(log10(bodywt), y = 1)) +
+  geom_jitter() +
+  scale_x_continuous(limits = c(-3, 4),
+                     breaks = -3:4) +
+  annotation_logticks(sides = "b")
+```
+
+#### Use scale_*_log10()
+- Labels correspond to actual datavalues
+```{r}
+ggplot(msleep, aes(bodywt, y = 1)) +
+  geom_jitter() +
+  scale_x_log10(limits = c(1e-03, 1e+04))
+```
+#### Use coord_trans()
+- More flexible, in that we can apply any transformation we'd like
+```{r}
+ggplot(msleep, aes(bodywt, y = 1)) +
+  geom_jitter() +
+  coord_trans(x = "log10")
+```
+#### Adjusting labels
+- As a final step, can add the actual values of the data
+
+#### Adding stats to transformed scales
+- Statistics are calculated on the untransformed data
+- A linear model may end up looking not-so-linear after an axis transformation
+
+### Section 3 - Double and flipped axes
+#### Double x or y axes - strongly discouraged, but can work well
+- Transformed values issue - an additional step away from the raw data
+- To make the plot easier to read, we can include the raw and log10-transformed values on one plot
+- Double axis - adds more info to an existing variable
+- Within the scale layer - use argument `sec.axis`
+
+#### Flipped axes
+- Change direction of dependencies
+- Change geometry orientation
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = FALSE)
+```
+- Both x and y variables are dependent, therefore doesn't matter which way they are mapped
+
+#### `coord_flip()`
+```{r}
+ggplot(iris, aes(x = Sepal.Length,
+                 y = Sepal.Width,
+                 color = Species)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+  coord_flip()
+```
+- Don't need to manually adjust all code
+- Can only use one coord layer in each plot
+
+### Section 4 - Polar coordinates
+- Cartesian (2d)
+  - Orthogonal x and y axes
+  - Modify axis limits and aspect ratio
+- Projections control perception, e.g. maps
+  - Many possible projections (see next course)
+    - Mercator - known to engross regions at poles and diminish regions around the equator
+    - Conic projection - alternative, but still suffers from the problem of projecting a 3D object in 2D
+    
+#### Polar coordinates
+- Transformed cartesian space
+- `coord_polar()`
+- Theta - the axis which will be presented around the circumference, defaults to the x-axis
+- A more common transformation is to place the y-axis on the circumferences by setting theta to y
+  - This is what we do with a bar chart to convert it to a pie chart
+- Polar coords should be used with extreme cautiou since the considerably distort the data
+- Some specific use-cases of polar coordinates
+- Polar coordinates are particularly useful if you are dealing with a cycle, like yearly data
+- You can adjust the start using the `start` argument (e.g. `start = -pi/16`)
+
+## Chapter 3 - Facets
+### Section 1 - The facets layer
+- Straight-forward yet useful
+- Based on the concept of small multiples
+  - Popularized by Edward Tufte
+  - Visualization of Quantitative Information, 1983
+  
+- Can split a large complex plot to produce multiple smaller plots using the same coord system
+```{r}
+p <- ggplot(iris.wide, aes(x = Length, y = Width,
+                           ccolorol = Part)) +
+  geom_jitter(alpha = 0.7) +
+  scale_color_brewer(palette = "Set1") +
+  coord_fixed()
+
+p + facet_grid(cols = vars(Species))
+# OR facet_grid(. ~ Species)
+```
+
+#### Other options
+- Split according to rows and columns
+  - Can use both
+  - Or wrap over a defined number of columns
+
+#### Formula notation
+- `facet_grid(rows = vars(A))` -> `facet_grid(A ~ .)`
+- `facet_grid(cols = vars(B))` -> `facet_grid(. ~ B)`
+- `facet_grid(rows = vars(A), cols = vars(B))` -> `facet_grid(A ~ B)`
+- Using `vars` is now preferred
+
+### Section 2 - Facet labels and order
+### A new dataframe
+```{r}
+mtsleep2 <- mammals %>%
+  mutate(bodywt_log = log10(body),
+         brainwt_log = log10(brain))
+mtsleep2
+  
+
+# Plot
+p <- ggplot(mtsleep2, aes(bodywt_log,
+                          brainwt_log)) +
+  geom_point(alpha = 0.6, shape = 16) +
+  coord_fixed()
+p
+```
+
+#### A new dataframe with facets
+Note: my version of mtsleep2 doesn't contain the variable vore
+```{r}
+p +
+  facet_grid(rows = vars(vore))
+```
+
+#### Poor labels and order
+- Two typical problems with facets:
+  - Poorly labelled (e.g. non-descriptive)
+  - Wrong or inappropriate order
+- Solutions:
+  - Easy: Add labels in ggplot
+  - Better: Relabel and rearrange factor variables in your dataframe
+  
+#### The labeller argument
+- The facet layer functions have a labeller argument, which defaults to label value
+```{r}
+# Default is to label the value
+p +
+  facet_grid(rows = vars(vore),
+             labeller = label_value)
+
+# Using label_both adds the variable name
+p +
+  facet_grid(rows = vars(vore),
+             labeller = label_both)
+```
+
+#### Two variables on one side
+- Using label_context avoids ambiguity
+- Adds variable name only if labels may be ambiguous
+- If each variable has a small number of labels, this works well
+```{r}
+p +
+  facet_grid(rows = vars(vore,
+                         conservation),
+             labeller = label_context)  
+```
+
+#### Relabelling and reordering factors
+- The forcats package in the tidyverse collection contains some really useful functions
+- `fct_recode` - for renaming level names in a factor variable
+```{r}
+msleep2$conservation <- fct_recode(msleep2$conservation,
+                                   Domesticated = "domesticated",
+                                   `Least concern` = "lc",
+                                   `Near threatened` = "nt",
+                                   Vulnerable = "vu",
+                                   Endangered = "en")
+mtsleep2$vore  <- fct_record(msleep2$vore,
+                             Carnivore = "carni",
+                             Herbivore = "herbi",
+                             Insectivore = "insecti",
+                             Omnivore = "omni")
+
+```
+
+#### Changing the order of levels
+```{r}
+msleep2$conservation = fct_relevel(msleep2$conservation,
+                                   c("Domesticated",
+                                     "Least Concern",
+                                     "Vulnerable",
+                                     "Endangered"))
+```
+
+#### Setting order
+- rct_rev() reverses order
